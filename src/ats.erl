@@ -2,6 +2,7 @@
 -author("khanhhua").
 
 -behaviour(application).
+-include("include/records.h").
 
 -export([start/2, stop/1]).
 -export([simple_loop/1]).
@@ -26,6 +27,8 @@
   {ok, pid(), State :: term()} |
   {error, Reason :: term()}).
 start(_StartType, _StartArgs) ->
+  ats_position_service:start_link(),
+
   Pid = spawn(?MODULE, simple_loop, [0]),
   {ok, Pid}.
 
