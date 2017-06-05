@@ -1,0 +1,19 @@
+%%%-------------------------------------------------------------------
+%%% @author khanhhua
+%%% @copyright (C) 2016, Fatman Designer
+%%% @doc
+%%%
+%%% @end
+%%% Created : 31. Dec 2016 10:57
+%%%-------------------------------------------------------------------
+{application, ats, [
+  {description, "Applicant Tracking System"},
+  {vsn, "1.0.0"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib
+  ]},
+  {mod, {ats, []}},
+  {env, []}
+]}.
