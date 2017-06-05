@@ -77,9 +77,37 @@ connection_handler(Socket) ->
 
 loop (Client) ->
   Client2 = ui(Client),
-  case Client2#client.terminated of
-    true -> terminated;
-    _ -> loop(Client2)
+  if
+    Client2#client.terminated =:= true -> terminated;
+    true -> case Client2#client.command of
+      {search_positions, QueryTerms} ->
+        Query = #positionQuery{minSalary = proplists:get_value(minSalary, QueryTerms),
+                               positionName = proplists:get_value(positionName, QueryTerms)},
+        Positions = ats_position_service:search(Query, 20),
+        client_write(Client2,
+          "=============================~n"
+          "Positions found~n"
+          "-----------------------------~n" ++
+          lists:join("",
+            lists:map(
+              fun (#position{name=Name, salary=Salary, id=Id}) ->
+                io_lib:format("~B. ~-20.s ~s~n", [Id, Name, Salary])
+              end,
+              Positions
+            )
+          ) ++
+          "=============================~n"
+        ),
+        loop(Client2);
+
+      {create_position, PositionProps} ->
+        Position = #position{name = proplists:get_value(name, PositionProps),
+                             salary = proplists:get_value(salary, PositionProps)},
+        ok = ats_position_service:create(Position),
+        loop(Client2);
+
+      _ -> loop(Client2)
+    end
   end.
 
 ui(Client) when Client#client.screen =:= ?SCREEN_MAIN_MENU ->
@@ -96,8 +124,8 @@ ui(Client) when Client#client.screen =:= ?SCREEN_MAIN_MENU ->
     "X" -> terminate
   end,
   case Choice of
-    terminate -> Client#client{terminated = true}; % Return a new instance of Client
-    Screen -> Client#client{screen = Screen} % Return a new instance of Client
+    terminate -> Client#client{terminated = true, command = undefined}; % Return a new instance of Client
+    Screen -> Client#client{screen = Screen, command = undefined} % Return a new instance of Client
   end;
 
 ui(Client) when Client#client.screen =:= ?SCREEN_SEARCH_POSITIONS ->
@@ -112,7 +140,10 @@ ui(Client) when Client#client.screen =:= ?SCREEN_SEARCH_POSITIONS ->
     "Position name: "),
   PositionName = client_read(Client),
   io:format("Searching for positions..."),
-  Client#client{screen = ?SCREEN_MAIN_MENU};
+  Client#client{
+    screen = ?SCREEN_MAIN_MENU,
+    command = {search_positions, [{minSalary, MinSalary}, {positionName, PositionName}]}
+  };
 
 ui(Client) when Client#client.screen =:= ?SCREEN_POST_POSITION ->
   client_write(Client,
@@ -126,7 +157,10 @@ ui(Client) when Client#client.screen =:= ?SCREEN_POST_POSITION ->
     "Position salary: "),
   PostionSalary = client_read(Client),
   io:format("Creating a new position..."),
-  Client#client{screen = ?SCREEN_MAIN_MENU}.
+  Client#client{
+    screen = ?SCREEN_MAIN_MENU,
+    command = {create_position, [{name, PositionName}, {salary, PostionSalary}]}
+  }.
 
 client_write(Client, String) ->
   gen_tcp:send(Client#client.socket, io_lib:format(String, [])).

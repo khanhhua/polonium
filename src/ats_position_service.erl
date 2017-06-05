@@ -49,8 +49,12 @@ handle_call(Request, _From, State) ->
 
       {reply, ok, State3};
 
-    {search, Query, Limit } ->
-      Positions = proplists:get_value(positions, State),
+    {search, #positionQuery{minSalary=MinSalary, positionName=PositionName}, Limit } ->
+      Positions = lists:filter(
+        fun (#position{name=Name, salary=Salary}) ->
+          (Salary >= MinSalary) and (string:str(Name, PositionName) =:= 1)
+        end,
+        proplists:get_value(positions, State)),
 
       {reply, Positions, State};
     _ -> {reply, ignored, State}
