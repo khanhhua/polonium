@@ -69,20 +69,18 @@ accept(LSocket) ->
 
 connection_handler(Socket) ->
   Client = #client{screen = ?SCREEN_MAIN_MENU, socket = Socket},
-  loop(Client).
+  case loop(Client) of
+    terminated -> gen_tcp:close(Socket);
+    _ -> ok
+  end.
+
 
 loop (Client) ->
   Client2 = ui(Client),
-  loop(Client2).
-  % Ui = ui(Client),
-  % gen_tcp:send(Socket, Ui),
-  % case gen_tcp:recv(Socket, 0) of
-  %   {ok, Data} ->
-  %     gen_tcp:send(Socket, Data),
-  %     connection_handler(Socket);
-  %   {error, closed} ->
-  %     ok
-  % end.
+  case Client2#client.terminated of
+    true -> terminated;
+    _ -> loop(Client2)
+  end.
 
 ui(Client) ->
   if
@@ -94,11 +92,16 @@ ui(Client) ->
         "2. Post a new position~n"
         "X. Quit~n"
         "Enter: "),
-      Screen = case client_read(Client) of
+      Choice =case client_read(Client) of
         "1" -> ?SCREEN_SEARCH_POSITIONS;
-        _ -> Client#client.screen
+        "2" -> ?SCREEN_POST_POSITION;
+        "X" -> terminate
       end,
-      Client#client{screen = Screen}; % Return a new instance of Client
+      case Choice of
+        terminate -> Client#client{terminated = true}; % Return a new instance of Client
+        Screen -> Client#client{screen = Screen} % Return a new instance of Client
+      end;
+
     Client#client.screen =:= ?SCREEN_SEARCH_POSITIONS ->
       client_write(Client,
         "ATS Applicant Tracking System~n"
@@ -112,6 +115,21 @@ ui(Client) ->
       PositionName = client_read(Client),
       io:format("Searching for positions..."),
       Client#client{screen = ?SCREEN_MAIN_MENU};
+
+    Client#client.screen =:= ?SCREEN_POST_POSITION ->
+      client_write(Client,
+        "ATS Applicant Tracking System~n"
+        "=============================~n"
+        "2. Post a new position~n"
+        "-----------------------------~n"
+        "Position name: "),
+      PositionName = client_read(Client),
+      client_write(Client,
+        "Position salary: "),
+      PostionSalary = client_read(Client),
+      io:format("Creating a new position..."),
+      Client#client{screen = ?SCREEN_MAIN_MENU};
+
     true -> Client
   end.
 
