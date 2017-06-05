@@ -2,7 +2,7 @@
 -author("khanhhua").
 
 -behaviour(application).
--include("include/records.h").
+-include("include/records.hrl").
 
 -export([start/2, stop/1]).
 -export([simple_loop/1]).

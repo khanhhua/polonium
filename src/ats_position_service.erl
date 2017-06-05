@@ -3,7 +3,7 @@
 
 -define(position_service, ?MODULE).
 
--include("include/records.h").
+-include("include/records.hrl").
 
 -export([get_template/0, create/1, search/2]).
 -export([start_link/0]).
