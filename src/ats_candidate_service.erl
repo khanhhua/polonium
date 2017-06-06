@@ -37,15 +37,15 @@ handle_call(Request, _From, State) ->
     {get_template} ->
       {reply, #candidate{name="Default", yob=0, id=0}, State};
 
-    {register, Candidate} ->
+    {register, #candidate{name=NewCandidateName, yob=NewCandidateYob, position_ids=NewPositionIds}} ->
       Candidates = proplists:get_value(candidates, State),
       case lists:filter(
         fun (#candidate{name=Name, yob=Yob}) ->
-          (Name =:= Candidate#candidate.name) and (Yob =:= Candidate#candidate.yob)
+          (Name =:= NewCandidateName) and (Yob =:= NewCandidateYob)
         end,
         Candidates) of
         [ExistingCandidate] ->
-          PositionIds2 = lists:umerge(Candidate#candidate.position_ids, ExistingCandidate#candidate.position_ids),
+          PositionIds2 = lists:umerge(NewPositionIds, ExistingCandidate#candidate.position_ids),
           ExistingCandidate2 = ExistingCandidate#candidate{position_ids=PositionIds2},
           io:format("Existing candidate: ~p~n", [ExistingCandidate]),
           io:format("Updated candidate: ~p~n~n", [ExistingCandidate2]),
@@ -57,7 +57,7 @@ handle_call(Request, _From, State) ->
           {reply, ok, State2};
         [] ->
           NextID = proplists:get_value(nextID, State),
-          Candidates2 = Candidates ++ [Candidate#candidate{id = NextID}],
+          Candidates2 = Candidates ++ [#candidate{id=NextID, name=NewCandidateName, yob=NewCandidateYob, position_ids=NewPositionIds}],
           io:format("Updated candidates: ~p~n", [Candidates2]),
 
           State2 = lists:keyreplace(candidates, 1, State, {candidates, Candidates2}),
