@@ -29,6 +29,7 @@ search (Query, Limit) ->
 
 %% IMPLEMENT gen_server behaviour
 init([]) ->
+  io:format("ATS Position Service started...~n"),
   {ok, [
     {positions, []},
     {nextID, 1}
