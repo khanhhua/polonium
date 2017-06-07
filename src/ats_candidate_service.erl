@@ -47,18 +47,13 @@ handle_call(Request, _From, State) ->
         [ExistingCandidate] ->
           PositionIds2 = lists:umerge(NewPositionIds, ExistingCandidate#candidate.position_ids),
           ExistingCandidate2 = ExistingCandidate#candidate{position_ids=PositionIds2},
-          io:format("Existing candidate: ~p~n", [ExistingCandidate]),
-          io:format("Updated candidate: ~p~n~n", [ExistingCandidate2]),
-          io:format("Existing candidates: ~p~n", [Candidates]),
 
           Candidates2 = lists:ukeymerge(2, [ExistingCandidate2], Candidates),
-          io:format("Updated candidates: ~p~n", [Candidates2]),
           State2 = lists:keyreplace(candidates, 1, State, {candidates, Candidates2}),
           {reply, ok, State2};
         [] ->
           NextID = proplists:get_value(nextID, State),
           Candidates2 = Candidates ++ [#candidate{id=NextID, name=NewCandidateName, yob=NewCandidateYob, position_ids=NewPositionIds}],
-          io:format("Updated candidates: ~p~n", [Candidates2]),
 
           State2 = lists:keyreplace(candidates, 1, State, {candidates, Candidates2}),
           State3 = lists:keyreplace(nextID, 1, State2, {nextID, NextID + 1}),

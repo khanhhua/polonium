@@ -39,7 +39,7 @@ start(_StartType, _StartArgs) ->
   ats_position_service:start_link(),
   ats_candidate_service:start_link(),
 
-  Pid = spawn(?MODULE, simple_loop, [0]),
+  Pid = spawn(?MODULE, simple_loop, [{}]),
   io:format("ATS Applicant Tracking System initialized...~n"),
   {ok, Pid}.
 
